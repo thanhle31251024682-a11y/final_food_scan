@@ -1,0 +1,19 @@
+# requirements.txt — AI Canteen
+# Khi chạy trên Google Colab, cell 1 của copy_of_ai_canteen_colab.py sẽ tự cài các thư viện web.
+# When running on Colab, cell 1 of the web app script installs web dependencies automatically.
+
+# ── Model Training (modeltrain_prj.py, tunning.py) ──────────────────────────
+tensorflow>=2.12.0
+numpy>=1.23.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scikit-learn>=1.2.0
+Pillow>=9.5.0
+
+# ── Web App (copy_of_ai_canteen_colab.py) ────────────────────────────────────
+flask>=2.3.0
+flask-cors>=4.0.0
+pyngrok>=7.0.0
+
+# ── Colab utilities (chỉ dùng trên Google Colab / Colab only) ───────────────
+# google-colab  ← built-in, không cần cài thủ công / built-in, no manual install needed
