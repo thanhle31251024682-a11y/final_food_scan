@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍱 Eat2Pay — Nhận diện khay cơm</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    --orange:   #FE6D73;
+    --orange-lt:#FF9DAA;
+    --cream:    #FFF8E9;
+    --warm:     #F7CFC2;
+    --brown:    #1F6B86;
+    --text:     #2B2630;
+    --muted:    #8FA3AD;
+    --border:   #FBDEDC;
+    --green:    #24E5D2;
+    --yellow:   #FFCB77;
+    --card:     #FFFFFF;
+    --shadow:   0 4px 24px rgba(254,109,115,.14);
+    --radius:   18px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(110deg, #FE6D73 0%, #FFCB77 52%, #24E5D2 100%);
+    padding: 0 32px;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 12px rgba(254,109,115,.35);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Playfair Display', serif;
+    color: #fff; font-size: 22px; font-weight: 700;
+  }
+  .logo-icon { font-size: 28px; }
+  .header-steps {
+    display: flex; gap: 8px;
+  }
+  .step-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.18);
+    border-radius: 20px;
+    padding: 5px 14px 5px 10px;
+    color: rgba(255,255,255,.85);
+    font-size: 13px; font-weight: 600;
+  }
+  .step-pill.active {
+    background: rgba(255,255,255,.95);
+    color: var(--orange);
+  }
+  .step-num {
+    width: 22px; height: 22px;
+    background: var(--orange);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 800; color: #fff;
+  }
+  .step-pill.active .step-num { background: var(--orange); }
+
+  /* ── LAYOUT ── */
+  .main {
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 28px 24px 60px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 18px 24px 14px;
+    border-bottom: 1.5px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-title {
+    font-size: 15px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .04em; color: var(--brown);
+  }
+  .card-body { padding: 22px 24px; }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2.5px dashed var(--orange-lt);
+    border-radius: 14px;
+    background: var(--warm);
+    cursor: pointer;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 280px;
+    transition: all .2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone:hover { border-color: var(--orange); background: #FFEEEC; }
+  .upload-zone img#preview {
+    width: 100%; height: 100%; object-fit: contain;
+    max-height: 340px; border-radius: 10px;
+  }
+  .upload-placeholder { text-align: center; padding: 20px; }
+  .upload-icon { font-size: 52px; margin-bottom: 10px; }
+  .upload-placeholder p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+  .upload-placeholder b { color: var(--orange); }
+  #file-input { display: none; }
+
+  .remove-btn {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,.55); color: #fff;
+    border: none; border-radius: 50%;
+    width: 32px; height: 32px;
+    font-size: 18px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .remove-btn:hover { background: var(--orange); }
+
+  .rotate-btn-group {
+    position: absolute; top: 10px; left: 10px;
+    display: none; gap: 6px;
+  }
+  .rotate-btn {
+    background: rgba(0,0,0,.55); color: #fff;
+    border: none; border-radius: 50%;
+    width: 32px; height: 32px;
+    font-size: 16px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .rotate-btn:hover { background: var(--orange); }
+
+  .divider { text-align: center; color: var(--muted); margin: 12px 0; font-size: 13px; }
+
+  /* ── CAMERA ── */
+  .camera-wrap {
+    border-radius: 14px; overflow: hidden;
+    position: relative; background: #111;
+    min-height: 240px; display: none;
+    align-items: center; justify-content: center;
+  }
+  .camera-wrap.active { display: flex; }
+  #camera-stream { width: 100%; border-radius: 14px; }
+  .camera-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .tray-guide {
+    width: 75%; height: 72%;
+    border: 2.5px dashed rgba(255,255,255,.6);
+    border-radius: 12px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    width: 100%; padding: 14px;
+    border-radius: 12px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--orange), #CE4A4A);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(254,109,115,.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(254,109,115,.5); }
+  .btn-primary:disabled { opacity: .5; transform: none; cursor: not-allowed; }
+  .btn-outline {
+    background: #fff; color: var(--orange);
+    border: 2px solid var(--orange);
+  }
+  .btn-outline:hover { background: var(--warm); }
+  .btn-cam {
+    background: var(--brown); color: #fff;
+  }
+  .btn-cam:hover { background: #154C61; }
+  .btn-sm {
+    width: auto; padding: 9px 18px; font-size: 13px; border-radius: 10px;
+  }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { background: #1AB8A8; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+
+  /* ── COMPARTMENT GRID ── */
+  .compartment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .compartment-card {
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--warm);
+    border: 1.5px solid var(--border);
+    transition: box-shadow .2s;
+  }
+  .compartment-card:hover { box-shadow: 0 4px 16px rgba(254,109,115,.18); }
+  .compartment-img {
+    width: 100%; height: 100px; object-fit: cover;
+    background: #eee;
+    display: block;
+  }
+  .compartment-img-placeholder {
+    width: 100%; height: 100px;
+    background: linear-gradient(135deg, #FFEFEA, #FBDEDC);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+  }
+  .compartment-info { padding: 10px 12px; }
+  .comp-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    color: var(--muted); letter-spacing: .06em;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .comp-label .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted); display: inline-block;
+  }
+  .comp-food { font-size: 13px; font-weight: 800; color: var(--text); margin: 2px 0 4px; }
+  .comp-price { font-size: 14px; font-weight: 900; color: var(--orange); }
+  .conf-bar-wrap { margin-top: 5px; }
+  .conf-bar-bg {
+    height: 4px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+  .conf-bar-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--green), #7FF0E0);
+    transition: width .6s ease;
+  }
+  .conf-text { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Loading state */
+  .analyzing-overlay {
+    display: none;
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(255,248,233,.88);
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px;
+  }
+  .analyzing-overlay.show { display: flex; }
+  .spinner {
+    width: 56px; height: 56px;
+    border: 5px solid var(--border);
+    border-top-color: var(--orange);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .analyzing-text { font-size: 17px; font-weight: 700; color: var(--brown); }
+
+  /* ── RECEIPT / BILL (GIAO DIỆN HOÁ ĐƠN GIẤY — giống mẫu index 6/1) ── */
+  .card-body:has(#bill-section) { background: var(--cream); }
+
+  .receipt-wrapper {
+    background: #FFFFFF;
+    color: #111111;
+    padding: 24px 20px 30px;
+    border-radius: 4px 4px 0 0;
+    font-family: 'Courier New', Courier, monospace;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(43,38,48,.18);
+    margin: 10px auto 20px;
+    max-width: 350px;
+  }
+  /* Viền răng cưa ở đáy hoá đơn */
+  .receipt-wrapper::after {
+    content: "";
+    position: absolute;
+    bottom: -10px; left: 0; right: 0;
+    height: 10px;
+    background-size: 20px 20px;
+    background-image:
+      linear-gradient(-45deg, transparent 75%, #FFFFFF 75%),
+      linear-gradient(45deg, transparent 75%, #FFFFFF 75%);
+    background-position: 0 0, 0 0;
+  }
+
+  .receipt-header { text-align: center; margin-bottom: 15px; }
+  .receipt-header h2 { font-size: 20px; font-weight: 900; margin-bottom: 5px; color: #111; }
+  .receipt-header p { font-size: 13px; font-weight: 600; color: #555; }
+
+  .receipt-divider { border-top: 2px dashed #BDBDBD; margin: 12px 0; }
+
+  .receipt-meta { font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; color: #333; }
+
+  .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+  .receipt-table th { text-align: left; padding-bottom: 8px; font-size: 12px; border-bottom: 2px dashed #BDBDBD; color: #111; }
+  .receipt-table td { padding: 8px 0; font-size: 14px; font-weight: 700; vertical-align: top; color: #111; }
+  .receipt-table .food-cell small { font-size: 11px; font-weight: normal; color: #666; }
+  .receipt-table .price-cell { text-align: right; }
+
+  .receipt-total {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 18px; font-weight: 900; margin: 15px 0 5px; color: #111;
+  }
+
+  /* Mã vạch ảo */
+  .barcode {
+    height: 45px;
+    width: 100%;
+    margin-top: 20px;
+    background: repeating-linear-gradient(
+      90deg,
+      #111, #111 2px, #fff 2px, #fff 4px,
+      #111 4px, #111 5px, #fff 5px, #fff 8px,
+      #111 8px, #111 12px, #fff 12px, #fff 14px
+    );
+  }
+
+  /* ── QR SECTION ── */
+  .qr-section {
+    margin-top: 20px;
+    background: var(--warm);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+  }
+  .qr-title { font-size: 14px; font-weight: 800; color: var(--brown); margin-bottom: 14px; }
+  .qr-amount { font-size: 26px; font-weight: 900; color: #1F8FA0; margin-bottom: 14px; }
+  .qr-image-wrap {
+    background: #fff; border-radius: 14px;
+    padding: 16px; display: inline-block;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  #qr-img { width: 180px; height: 180px; }
+  .qr-hint { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .bank-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--green), #2584A7); color: #fff;
+    border-radius: 20px; padding: 4px 14px;
+    font-size: 12px; font-weight: 700; margin-bottom: 8px;
+  }
+  .qr-section::after {
+    content: "";
+    display: block;
+    width: 150px; height: 20px;
+    margin: 16px auto 0;
+    opacity: .4;
+    background: repeating-linear-gradient(90deg,
+      var(--brown) 0 2px, transparent 2px 4px,
+      var(--brown) 4px 5px, transparent 5px 9px,
+      var(--brown) 9px 11px, transparent 11px 14px,
+      var(--brown) 14px 15px, transparent 15px 18px);
+  }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
+
+  /* ── LEFT COL ── */
+  .left-col { display: flex; flex-direction: column; gap: 20px; }
+
+  /* ── RIGHT COL ── */
+  .right-col { display: flex; flex-direction: column; gap: 24px; }
+
+  /* ── SCROLLABLE RESULTS ── */
+  .results-scroll {}
+  .results-scroll::-webkit-scrollbar { width: 5px; }
+  .results-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* ── RESET BTN ── */
+  .new-tray-btn {
+    display: none;
+    margin-top: 14px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .header-steps { display: none; }
+  }
+  @media (max-width: 600px) {
+    .compartment-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div class="analyzing-overlay" id="analyzing-overlay">
+  <div class="spinner"></div>
+  <div class="analyzing-text">🔍 Đang phân tích khay cơm...</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <span class="logo-icon">🍱</span> Eat2Pay
+  </div>
+  <div class="header-steps">
+    <div class="step-pill active" id="step1">
+      <span class="step-num">1</span> Chụp ảnh khay
+    </div>
+    <div class="step-pill" id="step2">
+      <span class="step-num">2</span> AI phân tích
+    </div>
+    <div class="step-pill" id="step3">
+      <span class="step-num">3</span> Xem hoá đơn
+    </div>
+    <div class="step-pill" id="step4">
+      <span class="step-num">4</span> Thanh toán QR
+    </div>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="main">
+
+  <!-- LEFT: Upload + Camera + Compartments -->
+  <div class="left-col">
+
+    <!-- Upload Card -->
+    <div class="card">
+      <div class="card-header">
+        <span>📸</span>
+        <span class="card-title">1. Tải ảnh khay cơm</span>
+      </div>
+      <div class="card-body">
+
+        <!-- Upload Zone -->
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+          <img id="preview" style="display:none" />
+          <div class="upload-placeholder" id="upload-placeholder">
+            <div class="upload-icon">🍽️</div>
+            <p>Nhấn để <b>chọn ảnh</b> từ thiết bị<br>hoặc kéo thả ảnh khay cơm vào đây</p>
+          </div>
+          <button class="remove-btn" id="remove-btn" onclick="removeImage(event)">×</button>
+          <div class="rotate-btn-group" id="rotate-btn-group">
+            <button class="rotate-btn" onclick="rotateImage(-90, event)" title="Xoay trái">↺</button>
+            <button class="rotate-btn" onclick="rotateImage(90, event)" title="Xoay phải">↻</button>
+          </div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" onchange="handleFile(this)">
+
+        <div class="divider">— hoặc —</div>
+
+        <!-- Camera -->
+        <div class="camera-wrap" id="camera-wrap">
+          <video id="camera-stream" autoplay playsinline></video>
+          <div class="camera-overlay">
+            <div class="tray-guide"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-cam btn-sm" onclick="toggleCamera()">
+            📷 <span id="cam-btn-text">Chụp bằng camera</span>
+          </button>
+          <button class="btn btn-outline btn-sm" id="capture-btn" style="display:none" onclick="capturePhoto()">
+            ⚡ Chụp ngay
+          </button>
+        </div>
+
+        <button class="btn btn-primary" id="analyze-btn" style="margin-top:14px" onclick="analyzeImage()" disabled>
+          🔍 Nhận diện khay cơm
+        </button>
+        <button class="btn btn-outline new-tray-btn" id="new-tray-btn" onclick="resetAll()">
+          🔄 Khay mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Compartments Card -->
+    <div class="card">
+      <div class="card-header">
+        <span>🔬</span>
+        <span class="card-title">2. Kết quả từng ngăn</span>
+      </div>
+      <div class="card-body results-scroll">
+        <div id="compartments-result">
+          <div class="empty-state">
+            <div class="empty-icon">🫙</div>
+            <p>Tải ảnh khay cơm lên và nhấn<br><b>Nhận diện</b> để xem kết quả</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Bill + QR -->
+  <div class="right-col">
+
+    <!-- Bill Card -->
+    <div class="card">
+      <div class="card-header">
+        <span>🧾</span>
+        <span class="card-title">3. Hoá đơn chi tiết</span>
+      </div>
+      <div class="card-body">
+        <div id="bill-section">
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Hoá đơn sẽ hiện ra<br>sau khi AI nhận diện xong</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Payment Card -->
+    <div class="card">
+      <div class="card-header">
+        <span>💳</span>
+        <span class="card-title">4. Thanh toán QR</span>
+      </div>
+      <div class="card-body">
+        <div id="qr-section">
+          <div class="empty-state">
+            <div class="empty-icon">📲</div>
+            <p>Mã QR thanh toán sẽ<br>xuất hiện ở đây</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================================================================
+//  CẤU HÌNH — ĐỔI CÁC GIÁ TRỊ NÀY
+// ================================================================
+
+// URL backend Flask (sẽ là link ngrok khi dùng Colab)
+// Nếu chạy local: "http://localhost:5000"
+const BACKEND_URL = window.location.origin;
+
+// Thông tin QR thanh toán
+// ĐỔI THÀNH SỐ TÀI KHOẢN THỰC CỦA BẠN:
+const BANK_CONFIG = {
+  bankId: "970418",       // BIDV: 970418 | VCB: 970436 | MB: 970422 | ACB: 970416
+  accountNo: "5901104456", // Số tài khoản
+  accountName: "PHAM PHU HOA",  // Tên chủ tài khoản
+  bankName: "BIDV",
+  template: "compact",
+};
+
+// ================================================================
+//  STATE
+// ================================================================
+let currentFile = null;
+let cameraStream = null;
+let isAnalyzing = false;
+
+// ================================================================
+//  FILE UPLOAD
+// ================================================================
+function handleFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  currentFile = file;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const preview = document.getElementById('preview');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('upload-placeholder').style.display = 'none';
+    document.getElementById('remove-btn').style.display = 'flex';
+    document.getElementById('rotate-btn-group').style.display = 'flex';
+    document.getElementById('analyze-btn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage(e) {
+  e.stopPropagation();
+  currentFile = null;
+  const preview = document.getElementById('preview');
+  preview.src = '';
+  preview.style.display = 'none';
+  document.getElementById('upload-placeholder').style.display = 'block';
+  document.getElementById('remove-btn').style.display = 'none';
+  document.getElementById('rotate-btn-group').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  document.getElementById('analyze-btn').disabled = true;
+}
+
+// ================================================================
+//  ROTATE IMAGE (chụp lệch hoặc up ảnh xoay đều dùng chung hàm này)
+// ================================================================
+function rotateImage(deg, e) {
+  if (e) e.stopPropagation();
+  if (!currentFile) return;
+
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      const swap = Math.abs(deg) === 90 || Math.abs(deg) === 270;
+      const canvas = document.createElement('canvas');
+      canvas.width = swap ? img.height : img.width;
+      canvas.height = swap ? img.width : img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(deg * Math.PI / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      canvas.toBlob((blob) => {
+        currentFile = new File([blob], currentFile.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+        document.getElementById('preview').src = URL.createObjectURL(blob);
+      }, 'image/jpeg', 0.95);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(currentFile);
+}
+
+// Drag & drop
+const uploadZone = document.getElementById('upload-zone');
+uploadZone.addEventListener('dragover', (e) => {
+  e.preventDefault(); uploadZone.style.borderColor = 'var(--orange)';
+});
+uploadZone.addEventListener('dragleave', () => {
+  uploadZone.style.borderColor = '';
+});
+uploadZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadZone.style.borderColor = '';
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    currentFile = file;
+    const fakeInput = { files: [file] };
+    handleFile(fakeInput);
+  }
+});
+
+// ================================================================
+//  CAMERA
+// ================================================================
+async function toggleCamera() {
+  const wrap = document.getElementById('camera-wrap');
+  const btnText = document.getElementById('cam-btn-text');
+  const captureBtn = document.getElementById('capture-btn');
+
+  if (cameraStream) {
+    // Tắt camera
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+    wrap.classList.remove('active');
+    captureBtn.style.display = 'none';
+    btnText.textContent = 'Chụp bằng camera';
+  } else {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+      });
+      document.getElementById('camera-stream').srcObject = cameraStream;
+      wrap.classList.add('active');
+      captureBtn.style.display = 'flex';
+      btnText.textContent = 'Tắt camera';
+    } catch (err) {
+      alert('Không thể mở camera: ' + err.message);
+    }
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('camera-stream');
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 1280;
+  canvas.height = video.videoHeight || 720;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  canvas.toBlob((blob) => {
+    currentFile = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = document.getElementById('preview');
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      document.getElementById('upload-placeholder').style.display = 'none';
+      document.getElementById('remove-btn').style.display = 'flex';
+      document.getElementById('rotate-btn-group').style.display = 'flex';
+      document.getElementById('analyze-btn').disabled = false;
+    };
+    reader.readAsDataURL(blob);
+
+    // Tắt camera sau khi chụp
+    toggleCamera();
+  }, 'image/jpeg', 0.95);
+}
+
+// ================================================================
+//  TRAY DETECTION + CROP
+//  Pipeline: load ảnh → detect 4 góc khay → perspective warp →
+//            crop 5 ngăn theo tọa độ relative cố định
+// ================================================================
+
+// Tọa độ 5 ngăn RELATIVE trên ảnh đã warp (1000×800)
+// Đo 1 lần từ khay chuẩn, dùng mãi vì đã normalize perspective
+const TRAY_COMPARTMENTS_JS = [
+  { name: 'Ngăn 1', x1: 0.04, y1: 0.01, x2: 0.37, y2: 0.44 },
+  { name: 'Ngăn 2', x1: 0.39, y1: 0.01, x2: 0.62, y2: 0.44 },
+  { name: 'Ngăn 3', x1: 0.63, y1: 0.01, x2: 0.97, y2: 0.44 },
+  { name: 'Ngăn 4', x1: 0.04, y1: 0.45, x2: 0.43, y2: 0.99 },
+  { name: 'Ngăn 5', x1: 0.50, y1: 0.44, x2: 0.97, y2: 0.99 },
+];
+
+const WARP_W = 1000, WARP_H = 800;
+
+/** Load File → HTMLImageElement */
+function loadImageFromFile(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); res(img); };
+    img.onerror = rej;
+    img.src = url;
+  });
+}
+
+/** Vẽ HTMLImageElement ra Canvas, trả về ImageData để xử lý pixel */
+function imgToCanvas(img) {
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth; c.height = img.naturalHeight;
+  c.getContext('2d').drawImage(img, 0, 0);
+  return c;
+}
+
+/**
+ * Detect 4 góc khay bằng cách tìm contour lớn nhất gần hình chữ nhật.
+ * Dùng threshold + scan viền để tìm bounding rect của vùng sáng (khay kim loại).
+ * Trả về [topLeft, topRight, bottomRight, bottomLeft] hoặc null nếu không tìm được.
+ */
+function detectTrayCorners(canvas) {
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const data = ctx.getImageData(0, 0, W, H).data;
+
+  // Tìm bounding box vùng không phải nền (scan từ 4 phía vào)
+  // Dùng gradient: pixel có độ sáng khác rõ với nền → là cạnh khay
+  // Simplified: tìm bounding rect của vùng sáng nhất (khay kim loại sáng)
+
+  let minX = W, minY = H, maxX = 0, maxY = 0;
+  const MARGIN = 0.02; // Bỏ qua 2% viền ảnh (padding/background)
+  const startX = Math.floor(W * MARGIN), endX = Math.floor(W * (1 - MARGIN));
+  const startY = Math.floor(H * MARGIN), endY = Math.floor(H * (1 - MARGIN));
+
+  // Tính brightness trung bình để làm ngưỡng
+  let totalBright = 0, count = 0;
+  for (let y = startY; y < endY; y += 4) {
+    for (let x = startX; x < endX; x += 4) {
+      const i = (y * W + x) * 4;
+      totalBright += (data[i] + data[i+1] + data[i+2]) / 3;
+      count++;
+    }
+  }
+  const avgBright = totalBright / count;
+  const threshold = avgBright * 0.85; // pixel sáng hơn 85% avg → thuộc khay
+
+  // Scan tìm bounding box
+  for (let y = startY; y < endY; y++) {
+    for (let x = startX; x < endX; x++) {
+      const i = (y * W + x) * 4;
+      const bright = (data[i] + data[i+1] + data[i+2]) / 3;
+      if (bright > threshold) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  // Nếu không tìm được vùng hợp lệ → fallback toàn ảnh
+  const roiW = maxX - minX, roiH = maxY - minY;
+  if (roiW < W * 0.3 || roiH < H * 0.3) {
+    console.warn('Không detect được khay, dùng toàn ảnh');
+    return [
+      { x: 0, y: 0 }, { x: W, y: 0 },
+      { x: W, y: H }, { x: 0, y: H }
+    ];
+  }
+
+  // Thêm padding nhỏ
+  const pad = Math.min(roiW, roiH) * 0.01;
+  return [
+    { x: minX - pad, y: minY - pad },
+    { x: maxX + pad, y: minY - pad },
+    { x: maxX + pad, y: maxY + pad },
+    { x: minX - pad, y: maxY + pad },
+  ];
+}
+
+/**
+ * Perspective transform: 4 điểm nguồn → hình chữ nhật WARP_W × WARP_H
+ * Dùng bilinear mapping đơn giản (không cần thư viện ngoài)
+ */
+function perspectiveWarp(srcCanvas, corners) {
+  const [tl, tr, br, bl] = corners;
+  const dst = document.createElement('canvas');
+  dst.width = WARP_W; dst.height = WARP_H;
+  const dctx = dst.getContext('2d');
+
+  // Với mỗi pixel đích → tính pixel nguồn (inverse mapping)
+  // Dùng bilinear interpolation từ 4 góc
+  // Công thức: P = (1-s)(1-t)*TL + s(1-t)*TR + st*BR + (1-s)t*BL
+  const srcCtx = srcCanvas.getContext('2d');
+  const srcData = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+  const dstData = dctx.createImageData(WARP_W, WARP_H);
+  const SW = srcCanvas.width, SH = srcCanvas.height;
+
+  for (let dy = 0; dy < WARP_H; dy++) {
+    const t = dy / WARP_H;
+    for (let dx = 0; dx < WARP_W; dx++) {
+      const s = dx / WARP_W;
+
+      // Bilinear interpolation ngược
+      const sx = (1-s)*(1-t)*tl.x + s*(1-t)*tr.x + s*t*br.x + (1-s)*t*bl.x;
+      const sy = (1-s)*(1-t)*tl.y + s*(1-t)*tr.y + s*t*br.y + (1-s)*t*bl.y;
+
+      const ix = Math.min(Math.max(Math.round(sx), 0), SW - 1);
+      const iy = Math.min(Math.max(Math.round(sy), 0), SH - 1);
+
+      const si = (iy * SW + ix) * 4;
+      const di = (dy * WARP_W + dx) * 4;
+      dstData.data[di]   = srcData.data[si];
+      dstData.data[di+1] = srcData.data[si+1];
+      dstData.data[di+2] = srcData.data[si+2];
+      dstData.data[di+3] = 255;
+    }
+  }
+  dctx.putImageData(dstData, 0, 0);
+  return dst;
+}
+
+/**
+ * Main: load ảnh → detect góc → warp → crop 5 ngăn → base64[]
+ * Wrap trong Promise để không block UI trong lúc warp
+ */
+function cropCompartments(img, quality = 0.85) {
+  return new Promise((resolve) => {
+    // Dùng setTimeout để browser có thể render loading trước khi tính toán nặng
+    setTimeout(() => {
+      // 1. Vẽ ảnh gốc ra canvas — scale down nếu quá lớn (tiết kiệm RAM)
+      const MAX_DIM = 1920;
+      let W = img.naturalWidth, H = img.naturalHeight;
+      if (W > MAX_DIM || H > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / W, MAX_DIM / H);
+        W = Math.round(W * ratio); H = Math.round(H * ratio);
+      }
+      const srcCanvas = document.createElement('canvas');
+      srcCanvas.width = W; srcCanvas.height = H;
+      srcCanvas.getContext('2d').drawImage(img, 0, 0, W, H);
+
+      // 2. Detect 4 góc khay
+      const corners = detectTrayCorners(srcCanvas);
+      console.log('Detected corners:', corners);
+
+      // 3. Perspective warp → ảnh chuẩn 1000×800
+      const warped = perspectiveWarp(srcCanvas, corners);
+
+      // 4. Crop 5 ngăn từ ảnh đã warp
+      const crops = TRAY_COMPARTMENTS_JS.map(({ name, x1, y1, x2, y2 }) => {
+        const px1 = Math.round(x1 * WARP_W), py1 = Math.round(y1 * WARP_H);
+        const pw  = Math.round((x2 - x1) * WARP_W);
+        const ph  = Math.round((y2 - y1) * WARP_H);
+
+        const c = document.createElement('canvas');
+        c.width = pw; c.height = ph;
+        c.getContext('2d').drawImage(warped, px1, py1, pw, ph, 0, 0, pw, ph);
+
+        return { name, base64: c.toDataURL('image/jpeg', quality).split(',')[1] };
+      });
+
+      resolve(crops);
+    }, 10);
+  });
+}
+
+// ================================================================
+//  ANALYZE
+// ================================================================
+async function analyzeImage() {
+  if (!currentFile || isAnalyzing) return;
+  isAnalyzing = true;
+
+  document.getElementById('analyzing-overlay').classList.add('show');
+  document.getElementById('analyze-btn').disabled = true;
+  updateSteps(2);
+
+  try {
+    // 1. Load ảnh vào <img> để có naturalWidth/Height chính xác
+    const img = await loadImageFromFile(currentFile);
+
+    // 2. Crop 5 ngăn ngay trên browser bằng Canvas
+    const crops = await cropCompartments(img);
+
+    // 3. Gửi 1 request với array crops — server chỉ cần predict
+    const resp = await fetch(`${BACKEND_URL}/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ crops }),   // [{ name, base64 }, ...]
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      throw new Error(err.error || 'Lỗi server');
+    }
+
+    const data = await resp.json();
+
+    // 4. Render — inject lại crop_image từ JS để hiển thị luôn không cần server trả
+    const itemsWithCrops = data.items.map((item, i) => ({
+      ...item,
+      crop_image: item.crop_image || crops[i]?.base64 || null,
+    }));
+
+    renderCompartments(itemsWithCrops);
+    renderBill(itemsWithCrops, data.total);
+    renderQR(data.total);
+
+    updateSteps(4);
+    document.getElementById('new-tray-btn').style.display = 'block';
+
+  } catch (err) {
+    alert('❌ Lỗi: ' + err.message + '\n\nKiểm tra backend Colab đang chạy và BACKEND_URL đúng.');
+    document.getElementById('analyze-btn').disabled = false;
+    updateSteps(1);
+  } finally {
+    document.getElementById('analyzing-overlay').classList.remove('show');
+    isAnalyzing = false;
+  }
+}
+
+// ================================================================
+//  RENDER COMPARTMENTS
+// ================================================================
+const FOOD_ICONS = {
+  'Cơm trắng': '🍚', 'Đậu hũ sốt cà': '🍅', 'Cá hú kho': '🐟',
+  'Thịt kho trứng': '🥚', 'Thịt kho': '🥩', 'Canh chua': '🍲',
+  'Sườn nướng': '🍖', 'Canh rau': '🥬', 'Rau xào': '🥦', 'Trứng chiên': '🍳',
+};
+
+const COMP_COLORS = ['#FE6D73','#FFCB77','#24E5D2','#2584A7','#FF819C'];
+
+function renderCompartments(items) {
+  const container = document.getElementById('compartments-result');
+  container.innerHTML = `<div class="compartment-grid">
+    ${items.map((item, i) => `
+      <div class="compartment-card">
+        ${item.crop_image
+          ? `<img class="compartment-img" src="data:image/jpeg;base64,${item.crop_image}" alt="${item.food_name}">`
+          : `<div class="compartment-img-placeholder">${FOOD_ICONS[item.food_name] || '🍽️'}</div>`
+        }
+        <div class="compartment-info">
+          <div class="comp-label">
+            <span class="dot" style="background:${COMP_COLORS[i]}"></span>
+            ${item.compartment}
+          </div>
+          <div class="comp-food">${item.food_name}</div>
+          <div class="comp-price">${formatPrice(item.price)}</div>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-bg">
+              <div class="conf-bar-fill" style="width:${item.confidence}%"></div>
+            </div>
+            <div class="conf-text">Độ tin cậy: ${item.confidence}%</div>
+          </div>
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+// ================================================================
+//  RENDER BILL (KIỂU HOÁ ĐƠN GIẤY — giống mẫu index 6/1)
+// ================================================================
+function renderBill(items, total) {
+  const now = new Date();
+  const invoiceId = 'HD' + now.getFullYear().toString().slice(-2)
+    + String(now.getMonth()+1).padStart(2,'0')
+    + String(now.getDate()).padStart(2,'0')
+    + String(now.getHours()).padStart(2,'0')
+    + String(now.getMinutes()).padStart(2,'0');
+
+  const timeStr = now.toLocaleString('vi-VN', { hour12: false });
+
+  document.getElementById('bill-section').innerHTML = `
+    <div class="receipt-wrapper">
+      <div class="receipt-header">
+        <h2>CĂN TIN AI</h2>
+        <p>HOÁ ĐƠN BÁN LẺ</p>
+      </div>
+
+      <div class="receipt-divider"></div>
+
+      <div class="receipt-meta">
+        <span>Số: ${invoiceId}</span>
+        <span>${timeStr}</span>
+      </div>
+
+      <div class="receipt-divider"></div>
+
+      <table class="receipt-table">
+        <thead>
+          <tr>
+            <th>TÊN MÓN</th>
+            <th style="text-align:right">GIÁ BÁN</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td class="food-cell">${item.food_name}<br><small>Ngăn: ${item.compartment}</small></td>
+              <td class="price-cell">${formatPrice(item.price)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+
+      <div class="receipt-divider"></div>
+
+      <div class="receipt-total">
+        <span>TỔNG CỘNG</span>
+        <span>${formatPrice(total)}</span>
+      </div>
+
+      <div class="barcode"></div>
+      <p style="text-align:center; font-size:11px; margin-top:10px; font-weight:600; color:#111;">Cảm ơn quý khách!</p>
+    </div>
+
+    <div class="btn-row" style="margin-top:14px; justify-content:center;">
+      <button class="btn btn-outline btn-sm" onclick="printBill()">🖨️ In hoá đơn</button>
+      <button class="btn btn-green btn-sm" onclick="copyBill()">📋 Sao chép Text</button>
+    </div>
+  `;
+}
+
+// ================================================================
+//  RENDER QR
+// ================================================================
+function renderQR(total) {
+  const { bankId, accountNo, accountName, bankName } = BANK_CONFIG;
+  const desc = encodeURIComponent('Thanh toan can teen');
+
+  // VietQR API (miễn phí, không cần key)
+  const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact.png?amount=${total}&addInfo=${desc}&accountName=${encodeURIComponent(accountName)}`;
+
+  document.getElementById('qr-section').innerHTML = `
+    <div class="qr-section">
+      <div class="bank-tag">🏦 ${bankName} — ${accountNo}</div>
+      <div class="qr-amount">${formatPrice(total)}</div>
+      <div class="qr-image-wrap">
+        <img id="qr-img" src="${qrUrl}" alt="QR thanh toán"
+          onerror="this.src='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=Thanh+toan+${total}+VND'">
+      </div>
+      <div class="qr-hint">Quét mã để chuyển khoản nhanh<br>
+        Chủ TK: <b>${accountName}</b>
+      </div>
+    </div>
+  `;
+}
+
+// ================================================================
+//  UTILS
+// ================================================================
+function formatPrice(n) {
+  return n.toLocaleString('vi-VN') + ' đ';
+}
+
+function updateSteps(active) {
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById(`step${i}`).classList.toggle('active', i <= active);
+  }
+}
+
+function resetAll() {
+  removeImage(new Event('click'));
+  document.getElementById('compartments-result').innerHTML = `
+    <div class="empty-state"><div class="empty-icon">🫙</div>
+    <p>Tải ảnh khay cơm lên và nhấn<br><b>Nhận diện</b> để xem kết quả</p></div>`;
+  document.getElementById('bill-section').innerHTML = `
+    <div class="empty-state"><div class="empty-icon">📋</div>
+    <p>Hoá đơn sẽ hiện ra<br>sau khi AI nhận diện xong</p></div>`;
+  document.getElementById('qr-section').innerHTML = `
+    <div class="empty-state"><div class="empty-icon">📲</div>
+    <p>Mã QR thanh toán sẽ<br>xuất hiện ở đây</p></div>`;
+  document.getElementById('new-tray-btn').style.display = 'none';
+  updateSteps(1);
+}
+
+function printBill() { window.print(); }
+
+function copyBill() {
+  const table = document.querySelector('.receipt-table');
+  if (!table) return;
+  const rows = [...table.querySelectorAll('tr')];
+  const text = rows.map(r =>
+    [...r.querySelectorAll('th,td')].map(c => c.textContent.replace(/\n/g, ' ').trim()).join(' \t ')
+  ).join('\n');
+  navigator.clipboard.writeText(text).then(() => alert('✅ Đã sao chép nội dung hoá đơn!'));
+}
+</script>
+</body>
+</html>
